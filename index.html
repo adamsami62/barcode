@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #scanner-container { width: 100%; max-width: 400px; margin: auto; display: none; }
+        #barcode-result { font-size: 20px; font-weight: bold; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background: #f0f0f0; }
+        button { padding: 10px; font-size: 16px; margin-top: 10px; display: block; margin: 10px auto; }
+    </style>
+</head>
+<body>
+    <h2>Barcode Scanner</h2>
+    <button onclick="startScanner()">Start Scanning</button>
+    <div id="scanner-container"></div>
+    <p id="barcode-result">Scan a barcode...</p>
+
+    <button id="scan-next-btn" onclick="resumeScanner()" style="display:none;">Next</button>
+    <button id="done-btn" onclick="clearScannedBarcodes()" style="display:none;">Done Scanning</button>
+
+    <table id="barcode-table">
+        <thead>
+            <tr>
+                <th>Barcode#</th>
+                <th>SKU</th>
+                <th>Quality</th>
+                <th>Thickness (mm)</th>
+                <th>Reel Width (mm)</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        let scannedBarcodes = {}; // Store scanned barcodes and quantities
+        let scanningEnabled = true; 
+
+        const barcodeData = {
+            "1234567": ["TJ 2XT", "K20", "0.300", "82.0"],
+            "7654321": ["AB 4YT", "M10", "0.250", "100.0"]
+        };
+
+        function startScanner() {
+            document.getElementById("scanner-container").style.display = "block";
+            document.getElementById("scan-next-btn").style.display = "none";
+            document.getElementById("done-btn").style.display = "none";
+            scanningEnabled = true;
+
+            Quagga.init({
+                inputStream: {
+                    type: "LiveStream",
+                    constraints: { facingMode: "environment" },
+                    target: document.querySelector("#scanner-container")
+                },
+                decoder: { readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader"] },
+                locate: true,
+                numOfWorkers: navigator.hardwareConcurrency || 4,
+                frequency: 5,
+            }, function(err) {
+                if (err) {
+                    console.error("Error initializing Quagga:", err);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(onBarcodeDetected);
+        }
+
+        function onBarcodeDetected(result) {
+            if (!scanningEnabled) return;
+
+            scanningEnabled = false;
+            Quagga.stop();
+
+            const barcode = result.codeResult.code;
+            document.getElementById("barcode-result").textContent = "Scanned: " + barcode;
+
+            if (scannedBarcodes[barcode]) {
+                scannedBarcodes[barcode].quantity += 1; 
+            } else {
+                scannedBarcodes[barcode] = {
+                    barcode,
+                    details: barcodeData[barcode] || ["N/A", "N/A", "N/A", "N/A"],
+                    quantity: 1
+                };
+            }
+
+            updateBarcodeTable();
+            document.getElementById("scan-next-btn").style.display = "block";
+            document.getElementById("done-btn").style.display = "block";
+        }
+
+        function updateBarcodeTable() {
+            const tbody = document.getElementById("barcode-table").querySelector("tbody");
+            tbody.innerHTML = "";
+
+            Object.values(scannedBarcodes).forEach(({ barcode, details, quantity }) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${barcode}</td><td>${details[0]}</td><td>${details[1]}</td>
+                                 <td>${details[2]}</td><td>${details[3]}</td><td>${quantity}</td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        function resumeScanner() {
+            document.getElementById("barcode-result").textContent = "Scan a barcode...";
+            document.getElementById("scan-next-btn").style.display = "none";
+            scanningEnabled = true;
+            Quagga.start();
+        }
+
+        function clearScannedBarcodes() {
+            scannedBarcodes = {};
+            document.getElementById("barcode-table").querySelector("tbody").innerHTML = "";
+            document.getElementById("barcode-result").textContent = "Scan a barcode...";
+            document.getElementById("done-btn").style.display = "none";
+            document.getElementById("scan-next-btn").style.display = "none";
+            scanningEnabled = true;
+            Quagga.start();
+        }
+    </script>
+</body>
+</html>
