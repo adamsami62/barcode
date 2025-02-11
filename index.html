@@ -6,7 +6,8 @@
     <title>Barcode Scanner</title>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; display: none; }
+       body { font-family: Arial, sans-serif; }
+        #password-container { text-align: center; margin-top: 20%; }
         #scanner-container { width: 100%; max-width: 400px; margin: auto; display: none; }
         #barcode-result { font-size: 20px; font-weight: bold; margin-top: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -16,30 +17,55 @@
     </style>
 </head>
 <body>
-    <h2>Barcode Scanner</h2>
-    <button onclick="startScanner()">Start Scanning</button>
-    <div id="scanner-container"></div>
-    <p id="barcode-result">Scan a barcode...</p>
 
-    <button id="scan-next-btn" onclick="resumeScanner()" style="display:none;">Next</button>
-    <button id="done-btn" onclick="clearScannedBarcodes()" style="display:none;">Done Scanning</button>
+    <!-- Password Entry -->
+    <div id="password-container">
+        <h2>Enter Password</h2>
+        <input type="password" id="password-input">
+        <button onclick="checkPassword()">Submit</button>
+        <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
+    </div>
 
-    <table id="barcode-table">
-        <thead>
-            <tr>
-                <th>Barcode#</th>
-                <th>SKU</th>
-                <th>Quality</th>
-                <th>Thickness (mm)</th>
-                <th>Reel Width (mm)</th>
-                <th>Quantity</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <!-- Scanner & Table (Hidden until authenticated) -->
+    <div id="main-content" style="display: none;">
+        <h2>Barcode Scanner</h2>
+        <button onclick="startScanner()">Start Scanning</button>
+        <div id="scanner-container"></div>
+        <p id="barcode-result">Scan a barcode...</p>
+
+        <button id="scan-next-btn" onclick="resumeScanner()" style="display:none;">Next</button>
+        <button id="done-btn" onclick="clearScannedBarcodes()" style="display:none;">Done Scanning</button>
+        <button id="copy-btn" onclick="copyTableData()" style="display:none;">Copy Table Data</button>
+
+        <table id="barcode-table">
+            <thead>
+                <tr>
+                    <th>Barcode#</th>
+                    <th>SKU</th>
+                    <th>Quality</th>
+                    <th>Thickness (mm)</th>
+                    <th>Reel Width (mm)</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <script>
-        let scannedBarcodes = {}; // Store scanned barcodes and quantities
+        // Password Protection
+        function checkPassword() {
+            const password = document.getElementById("password-input").value;
+            if (password === "678121") {
+                document.body.style.display = "block"; // Show entire page
+                document.getElementById("password-container").style.display = "none";
+                document.getElementById("main-content").style.display = "block";
+            } else {
+                document.getElementById("error-message").style.display = "block";
+            }
+        }
+
+        let scannedBarcodes = {}; 
         let scanningEnabled = true; 
 
         const barcodeData = {
@@ -47,18 +73,11 @@
             "7654321": ["AB 4YT", "M10", "0.250", "100.0"]
         };
 
-        function checkPassword() {
-            let password = prompt("Enter password to access:");
-            while (password !== "678121") {
-                password = prompt("Incorrect password. Try again:");
-            }
-            document.body.style.display = "block"; // Show content after correct password
-        }
-
         function startScanner() {
             document.getElementById("scanner-container").style.display = "block";
             document.getElementById("scan-next-btn").style.display = "none";
             document.getElementById("done-btn").style.display = "none";
+            document.getElementById("copy-btn").style.display = "none";
             scanningEnabled = true;
 
             Quagga.init({
@@ -104,6 +123,7 @@
             updateBarcodeTable();
             document.getElementById("scan-next-btn").style.display = "block";
             document.getElementById("done-btn").style.display = "block";
+            document.getElementById("copy-btn").style.display = "block";
         }
 
         function updateBarcodeTable() {
@@ -131,12 +151,27 @@
             document.getElementById("barcode-result").textContent = "Scan a barcode...";
             document.getElementById("done-btn").style.display = "none";
             document.getElementById("scan-next-btn").style.display = "none";
+            document.getElementById("copy-btn").style.display = "none";
             scanningEnabled = true;
             Quagga.start();
         }
 
-        // Call password check on page load
-        window.onload = checkPassword;
+        // Copy table data to clipboard
+        function copyTableData() {
+            let table = document.getElementById("barcode-table");
+            let rows = table.querySelectorAll("tr");
+            let copiedText = "";
+
+            rows.forEach(row => {
+                let cells = row.querySelectorAll("td, th");
+                let rowText = Array.from(cells).map(cell => cell.textContent).join("\t"); // Tab-separated for easy pasting
+                copiedText += rowText + "\n";
+            });
+
+            navigator.clipboard.writeText(copiedText)
+                .then(() => alert("Table data copied to clipboard!"))
+                .catch(err => console.error("Error copying text: ", err));
+        }
     </script>
 </body>
 </html>
