@@ -6,120 +6,76 @@
     <title>Barcode Scanner</title>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <style>
-        /* General Styles */
-        * {
-            box-sizing: border-box;
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            overflow-x: hidden; /* Prevents horizontal scrolling */
         }
-
-        html, body {
-            overflow-x: hidden;
-            width: 100%;
-            height: 100%;
-            background-color: #f4f6f9;
-            color: #042c64;
+        #password-container {
             text-align: center;
+            margin-top: 20%;
         }
-
-        h2 {
-            color: #042c64;
-            margin-bottom: 10px;
-        }
-
-        button {
-            background-color: #042c64;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-top: 10px;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background-color: #021a3a;
-        }
-
-        /* Prevent Unwanted Scrolling */
-        body, html {
-            position: fixed;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-        }
-
-        /* Scanner */
         #scanner-container {
             width: 100%;
             max-width: 400px;
-            margin: 20px auto;
+            margin: auto;
             display: none;
-            border: 2px solid #042c64;
-            border-radius: 8px;
-            padding: 10px;
         }
-
         #barcode-result {
             font-size: 20px;
             font-weight: bold;
             margin-top: 20px;
-            color: #042c64;
+            text-align: center;
         }
-
-        /* Table */
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 20px;
-            padding: 10px;
-        }
-
         table {
             width: 100%;
-            max-width: 800px;
             border-collapse: collapse;
+            margin-top: 20px;
             background: white;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-            white-space: nowrap;
         }
-
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
         th {
-            background-color: #042c64;
+            background: #042c64;
             color: white;
+        }
+        button {
             padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            display: block;
+            margin: 10px auto;
+            background: #042c64;
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
-
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
+        button:hover {
+            background: #0542a5;
         }
-
-        tbody tr:nth-child(even) {
-            background-color: #e6ecf5;
-        }
-
-        /* Mobile Optimization */
         @media screen and (max-width: 600px) {
-            .table-wrapper {
-                overflow-x: scroll;
-                border: 2px solid #042c64;
-                border-radius: 8px;
-                background: white;
-            }
-
             table {
+                display: block;
                 width: 100%;
-                min-width: 600px; /* Prevent table from squishing */
+                overflow-x: auto;
             }
-
+            tbody, tr {
+                display: block;
+                width: 100%;
+            }
             td {
-                padding: 8px;
-                font-size: 14px;
+                display: block;
+                text-align: left;
+                padding: 10px;
+                border-bottom: 1px solid black;
+            }
+            body {
+                overscroll-behavior: contain; /* Prevents weird scrolling issues */
             }
         }
     </style>
@@ -134,28 +90,26 @@
     </div>
 
     <div id="main-content" style="display: none;">
-        <h2>Barcode Scanner</h2>
+        <h2 style="text-align:center;">Barcode Scanner</h2>
         <button onclick="startScanner()">Start Scanning</button>
+        <button id="flashlight-btn" onclick="toggleFlashlight()" style="display:none;">Toggle Flashlight</button>
         <div id="scanner-container"></div>
         <p id="barcode-result">Scan a barcode...</p>
-
         <button id="copy-btn" onclick="copyTableData()" style="display:none;">Copy Table Data</button>
 
-        <div class="table-wrapper">
-            <table id="barcode-table">
-                <thead>
-                    <tr>
-                        <th>Barcode#</th>
-                        <th>SKU</th>
-                        <th>Quality</th>
-                        <th>Thickness (mm)</th>
-                        <th>Reel Width (mm)</th>
-                        <th>Quantity</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <table id="barcode-table">
+            <thead>
+                <tr>
+                    <th>Barcode#</th>
+                    <th>SKU</th>
+                    <th>Quality</th>
+                    <th>Thickness (mm)</th>
+                    <th>Reel Width (mm)</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 
     <script>
@@ -170,8 +124,10 @@
             }
         }
 
-        let scannedBarcodes = {}; 
-        let scanningEnabled = true; 
+        let scannedBarcodes = {};
+        let scanningEnabled = true;
+        let videoTrack;
+        let flashlightOn = false;
 
         const barcodeData = {
             "1010004533651628": ["TJ 2XT", "K20", "0.300", "105.6"]
@@ -179,13 +135,15 @@
 
         function startScanner() {
             document.getElementById("scanner-container").style.display = "block";
-            document.getElementById("copy-btn").style.display = "none";
+            document.getElementById("flashlight-btn").style.display = "block";
             scanningEnabled = true;
 
             Quagga.init({
                 inputStream: {
                     type: "LiveStream",
-                    constraints: { facingMode: "environment" },
+                    constraints: {
+                        facingMode: "environment"
+                    },
                     target: document.querySelector("#scanner-container")
                 },
                 decoder: { readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader"] },
@@ -198,6 +156,7 @@
                     return;
                 }
                 Quagga.start();
+                videoTrack = Quagga.CameraAccess.getActiveTrack();
             });
 
             Quagga.onDetected(onBarcodeDetected);
@@ -205,7 +164,6 @@
 
         function onBarcodeDetected(result) {
             if (!scanningEnabled) return;
-
             scanningEnabled = false;
             Quagga.stop();
 
@@ -219,7 +177,7 @@
             }
 
             if (scannedBarcodes[barcode]) {
-                scannedBarcodes[barcode].quantity += 1; 
+                scannedBarcodes[barcode].quantity += 1;
             } else {
                 scannedBarcodes[barcode] = {
                     barcode,
@@ -238,13 +196,8 @@
 
             Object.values(scannedBarcodes).forEach(({ barcode, details, quantity }) => {
                 const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${barcode}</td>
-                    <td>${details[0]}</td>
-                    <td>${details[1]}</td>
-                    <td>${details[2]}</td>
-                    <td>${details[3]}</td>
-                    <td>${quantity}</td>`;
+                row.innerHTML = `<td>${barcode}</td><td>${details[0]}</td><td>${details[1]}</td>
+                                 <td>${details[2]}</td><td>${details[3]}</td><td>${quantity}</td>`;
                 tbody.appendChild(row);
             });
         }
@@ -253,6 +206,34 @@
             document.getElementById("barcode-result").textContent = "Scan a barcode...";
             scanningEnabled = true;
             Quagga.start();
+        }
+
+        function copyTableData() {
+            let table = document.getElementById("barcode-table");
+            let rows = table.querySelectorAll("tr");
+            let copiedText = "";
+
+            rows.forEach(row => {
+                let cells = row.querySelectorAll("td, th");
+                let rowText = Array.from(cells).map(cell => cell.textContent).join("\t");
+                copiedText += rowText + "\n";
+            });
+
+            navigator.clipboard.writeText(copiedText)
+                .then(() => alert("Table data copied to clipboard!"))
+                .catch(err => console.error("Error copying text: ", err));
+        }
+
+        function toggleFlashlight() {
+            if (!videoTrack) return alert("Camera not active");
+
+            const capabilities = videoTrack.getCapabilities();
+            if (!capabilities.torch) {
+                return alert("Flashlight not supported on this device.");
+            }
+
+            flashlightOn = !flashlightOn;
+            videoTrack.applyConstraints({ advanced: [{ torch: flashlightOn }] });
         }
     </script>
 </body>
