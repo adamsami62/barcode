@@ -2,78 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barcode Scanner</title>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            overflow-x: hidden;
-            text-align: center;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; text-align: center; overflow-x: hidden; }
+        
         #password-container {
-            width: 300px;
-            margin: 20vh auto;
-            padding: 20px;
-            background: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
+            background: white; padding: 30px; width: 90%; max-width: 350px; margin: 15% auto;
+            border-radius: 10px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
-        #scanner-container {
-            width: 100%;
-            max-width: 400px;
-            margin: auto;
-            display: none;
-        }
-        #barcode-result {
-            font-size: 20px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
+        
+        #scanner-container { width: 100%; max-width: 400px; margin: auto; display: none; }
+        #barcode-result { font-size: 18px; font-weight: bold; margin-top: 20px; }
+        
         .table-container {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: auto;
-            border: 1px solid #ccc;
-            background: white;
-            padding: 10px;
-            margin-top: 20px;
+            max-width: 100%; overflow-x: auto; margin: 20px auto; padding: 10px;
+            background: white; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background: #042c64;
-            color: white;
-        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; font-size: 14px; }
+        th { background: #042c64; color: white; }
+        
         button {
-            padding: 10px;
-            font-size: 16px;
-            margin-top: 10px;
-            background: #042c64;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            padding: 10px 15px; font-size: 16px; background: #042c64; color: white; border: none;
+            border-radius: 5px; cursor: pointer; margin-top: 10px;
         }
-        button:hover {
-            background: #0542a5;
+        button:hover { background: #064aa8; }
+
+        @media screen and (max-width: 600px) {
+            .table-container { overflow-x: auto; }
+            table { display: block; white-space: nowrap; }
         }
     </style>
 </head>
 <body>
     <div id="password-container">
         <h2>Enter Password</h2>
-        <input type="password" id="password-input" style="width: 100%; padding: 8px;">
+        <input type="password" id="password-input">
         <button onclick="checkPassword()">Submit</button>
         <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
     </div>
@@ -81,10 +48,9 @@
     <div id="main-content" style="display: none;">
         <h2>Barcode Scanner</h2>
         <button onclick="startScanner()">Start Scanning</button>
-        <button id="flashlight-btn" onclick="toggleFlashlight()" style="display:none;">Toggle Flashlight</button>
+        <button onclick="toggleFlashlight()">Toggle Flashlight</button>
         <div id="scanner-container"></div>
         <p id="barcode-result">Scan a barcode...</p>
-        <button id="copy-btn" onclick="copyTableData()" style="display:none;">Copy Table Data</button>
 
         <div class="table-container">
             <table id="barcode-table">
@@ -107,6 +73,7 @@
         function checkPassword() {
             const password = document.getElementById("password-input").value;
             if (password === "678121") {
+                document.body.style.display = "block";
                 document.getElementById("password-container").style.display = "none";
                 document.getElementById("main-content").style.display = "block";
             } else {
@@ -115,31 +82,62 @@
         }
 
         let scanningEnabled = true;
-        let videoTrack;
         let flashlightOn = false;
+        const barcodeData = {
+            "1010004533651628": ["TJ 2XT", "K20", "0.300", "105.6"]
+        };
 
         function startScanner() {
             document.getElementById("scanner-container").style.display = "block";
-            document.getElementById("flashlight-btn").style.display = "block";
             scanningEnabled = true;
 
             Quagga.init({
-                inputStream: { type: "LiveStream", constraints: { facingMode: "environment" }, target: "#scanner-container" },
-                decoder: { readers: ["code_128_reader", "ean_reader"] },
+                inputStream: {
+                    type: "LiveStream",
+                    constraints: { facingMode: "environment", torch: flashlightOn },
+                    target: document.querySelector("#scanner-container")
+                },
+                decoder: { readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader"] },
                 locate: true,
+                numOfWorkers: navigator.hardwareConcurrency || 4,
+                frequency: 5,
             }, function(err) {
                 if (err) { console.error("Error initializing Quagga:", err); return; }
                 Quagga.start();
-                videoTrack = Quagga.CameraAccess.getActiveTrack();
             });
+
+            Quagga.onDetected(onBarcodeDetected);
         }
 
         function toggleFlashlight() {
-            if (!videoTrack) return alert("Camera not active");
-            const capabilities = videoTrack.getCapabilities();
-            if (!capabilities.torch) return alert("Flashlight not supported on this device.");
             flashlightOn = !flashlightOn;
-            videoTrack.applyConstraints({ advanced: [{ torch: flashlightOn }] });
+            startScanner();
+        }
+
+        function onBarcodeDetected(result) {
+            if (!scanningEnabled) return;
+            scanningEnabled = false;
+            Quagga.stop();
+
+            const barcode = result.codeResult.code;
+            document.getElementById("barcode-result").textContent = "Scanned: " + barcode;
+
+            if (!barcodeData[barcode]) {
+                alert("Barcode not recognized");
+                startScanner();
+                return;
+            }
+
+            updateBarcodeTable(barcode);
+        }
+
+        function updateBarcodeTable(barcode) {
+            const tbody = document.getElementById("barcode-table").querySelector("tbody");
+            const details = barcodeData[barcode];
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${barcode}</td><td>${details[0]}</td><td>${details[1]}</td>
+                             <td>${details[2]}</td><td>${details[3]}</td><td>1</td>`;
+            tbody.appendChild(row);
         }
     </script>
 </body>
