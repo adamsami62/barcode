@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Set maximum-scale=1.0 and user-scalable=no to prevent zooming -->
+  <!-- Prevent zooming on password input and maintain default scale -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Barcode Scanner</title>
   <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -13,9 +13,9 @@
       margin: 0;
       padding: 0;
       text-align: center;
-      overflow-x: hidden;
+      overflow-x: hidden; /* Prevent overall horizontal scrolling */
     }
-    /* Password container centered and responsive */
+    /* Password container */
     #password-container {
       background: white;
       padding: 20px;
@@ -34,13 +34,13 @@
       color: red;
       display: none;
     }
-    /* Main content container with less scroll room */
+    /* Main content */
     #main-content {
       max-width: 500px;
       margin: 10px auto;
       padding: 10px;
     }
-    /* Scanner box takes full space for camera view */
+    /* Scanner box to contain the camera view */
     #scanner-box {
       width: 100%;
       height: 300px;
@@ -52,7 +52,7 @@
       border-radius: 10px;
       overflow: hidden;
     }
-    /* Adjust scanner container to fill its parent */
+    /* Scanner container fills the box */
     #scanner-container {
       width: 100%;
       height: 100%;
@@ -62,12 +62,18 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    table {
+    /* Table container: only the table scrolls */
+    .table-container {
       width: 100%;
-      border-collapse: collapse;
+      overflow-x: auto;
       margin-top: 20px;
+      border: 1px solid black;
+    }
+    table {
+      border-collapse: collapse;
       background: white;
       table-layout: fixed;
+      width: 100%;
     }
     th, td {
       border: 1px solid black;
@@ -80,6 +86,7 @@
       color: white;
       padding: 10px;
     }
+    /* Buttons styling */
     button {
       padding: 15px;
       font-size: 18px;
@@ -96,11 +103,14 @@
     button:hover {
       background: #031c46;
     }
+    /* On small screens, fix table width so only the table scrolls */
     @media screen and (max-width: 600px) {
-      table { 
-        min-width: 600px;
+      table {
+        width: 600px;
       }
-      #scanner-box { height: 250px; }
+      #scanner-box {
+        height: 250px;
+      }
     }
   </style>
 </head>
@@ -121,19 +131,21 @@
     </div>
     <p id="barcode-result">Scan a barcode...</p>
     <button id="copy-btn" onclick="copyTableData()">Copy Table Data</button>
-    <table id="barcode-table">
-      <thead>
-        <tr>
-          <th>Barcode#</th>
-          <th>SKU</th>
-          <th>Quality</th>
-          <th>Thickness (mm)</th>
-          <th>Reel Width (mm)</th>
-          <th>Quantity</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-container">
+      <table id="barcode-table">
+        <thead>
+          <tr>
+            <th>Barcode#</th>
+            <th>SKU</th>
+            <th>Quality</th>
+            <th>Thickness (mm)</th>
+            <th>Reel Width (mm)</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
