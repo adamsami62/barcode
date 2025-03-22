@@ -15,7 +15,7 @@
       text-align: center;
       overflow-x: hidden;
     }
-    /* Password container */
+    /* Password container remains centered */
     #password-container {
       background: white;
       padding: 20px;
@@ -34,19 +34,13 @@
       color: red;
       display: none;
     }
-    /* Main content */
+    /* Main content: fixed width on wide screens */
     #main-content {
-      max-width: 500px;
-      margin: 10px auto;
+      max-width: 800px;
+      margin: 0 auto;
       padding: 10px;
     }
-    /* Expand main content on wide screens */
-    @media screen and (min-width: 800px) {
-      #main-content {
-        max-width: 800px;
-      }
-    }
-    /* Scanner box takes full space for camera view */
+    /* Scanner box: dedicated area for camera view */
     #scanner-box {
       width: 100%;
       height: 300px;
@@ -58,7 +52,7 @@
       border-radius: 10px;
       overflow: hidden;
     }
-    /* Adjust scanner container to fill its parent */
+    /* Scanner container fills the box */
     #scanner-container {
       width: 100%;
       height: 100%;
@@ -68,7 +62,7 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Table container: only the table scrolls */
+    /* Table container: only the table scrolls on narrow screens */
     .table-container {
       width: 100%;
       overflow-x: auto;
@@ -76,10 +70,10 @@
       border: 1px solid black;
     }
     table {
+      width: 100%;
       border-collapse: collapse;
       background: white;
       table-layout: fixed;
-      width: 100%;
     }
     th, td {
       border: 1px solid black;
@@ -92,7 +86,7 @@
       color: white;
       padding: 10px;
     }
-    /* Buttons styling */
+    /* Big, blue buttons */
     button {
       padding: 15px;
       font-size: 18px;
@@ -109,10 +103,10 @@
     button:hover {
       background: #031c46;
     }
-    /* On small screens, fix table width so only the table scrolls */
+    /* On narrow screens, force table to be wide so internal scrolling works */
     @media screen and (max-width: 600px) {
       table {
-        width: 600px;
+        min-width: 600px;
       }
       #scanner-box {
         height: 250px;
