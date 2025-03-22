@@ -2,27 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Barcode Scanner</title>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <style>
         /* General Styles */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
-            color: #042c64;
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: #f4f6f9;
+            color: #042c64;
             text-align: center;
         }
 
-        /* Header */
         h2 {
             color: #042c64;
             margin-bottom: 10px;
         }
 
-        /* Buttons */
         button {
             background-color: #042c64;
             color: white;
@@ -39,18 +44,11 @@
             background-color: #021a3a;
         }
 
-        /* Password Container */
-        #password-container {
-            text-align: center;
-            margin-top: 20%;
-        }
-
-        #password-input {
-            padding: 10px;
-            font-size: 16px;
-            margin-top: 5px;
-            border: 1px solid #042c64;
-            border-radius: 5px;
+        /* Prevent Unwanted Scrolling */
+        body, html {
+            position: fixed;
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
         /* Scanner */
@@ -72,15 +70,22 @@
         }
 
         /* Table */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
         table {
-            width: 95%;
+            width: 100%;
             max-width: 800px;
             border-collapse: collapse;
-            margin: 20px auto;
             background: white;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+            white-space: nowrap;
         }
 
         th {
@@ -100,36 +105,21 @@
 
         /* Mobile Optimization */
         @media screen and (max-width: 600px) {
-            table {
-                display: block;
-                width: 100%;
-            }
-
-            thead {
-                display: none;
-            }
-
-            tbody, tr {
-                display: block;
-                width: 100%;
+            .table-wrapper {
+                overflow-x: scroll;
                 border: 2px solid #042c64;
                 border-radius: 8px;
-                margin-bottom: 10px;
-                padding: 10px;
                 background: white;
             }
 
-            td {
-                display: flex;
-                justify-content: space-between;
-                padding: 8px;
-                border-bottom: 1px solid #ccc;
+            table {
+                width: 100%;
+                min-width: 600px; /* Prevent table from squishing */
             }
 
-            td::before {
-                content: attr(data-label);
-                font-weight: bold;
-                color: #042c64;
+            td {
+                padding: 8px;
+                font-size: 14px;
             }
         }
     </style>
@@ -151,19 +141,21 @@
 
         <button id="copy-btn" onclick="copyTableData()" style="display:none;">Copy Table Data</button>
 
-        <table id="barcode-table">
-            <thead>
-                <tr>
-                    <th>Barcode#</th>
-                    <th>SKU</th>
-                    <th>Quality</th>
-                    <th>Thickness (mm)</th>
-                    <th>Reel Width (mm)</th>
-                    <th>Quantity</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-wrapper">
+            <table id="barcode-table">
+                <thead>
+                    <tr>
+                        <th>Barcode#</th>
+                        <th>SKU</th>
+                        <th>Quality</th>
+                        <th>Thickness (mm)</th>
+                        <th>Reel Width (mm)</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -247,12 +239,12 @@
             Object.values(scannedBarcodes).forEach(({ barcode, details, quantity }) => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
-                    <td data-label="Barcode#">${barcode}</td>
-                    <td data-label="SKU">${details[0]}</td>
-                    <td data-label="Quality">${details[1]}</td>
-                    <td data-label="Thickness (mm)">${details[2]}</td>
-                    <td data-label="Reel Width (mm)">${details[3]}</td>
-                    <td data-label="Quantity">${quantity}</td>`;
+                    <td>${barcode}</td>
+                    <td>${details[0]}</td>
+                    <td>${details[1]}</td>
+                    <td>${details[2]}</td>
+                    <td>${details[3]}</td>
+                    <td>${quantity}</td>`;
                 tbody.appendChild(row);
             });
         }
