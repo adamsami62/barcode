@@ -6,7 +6,7 @@
     <title>Barcode Scanner</title>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <style>
-       body { font-family: Arial, sans-serif; }
+        body { font-family: Arial, sans-serif; }
         #password-container { text-align: center; margin-top: 20%; }
         #scanner-container { width: 100%; max-width: 400px; margin: auto; display: none; }
         #barcode-result { font-size: 20px; font-weight: bold; margin-top: 20px; }
@@ -14,11 +14,16 @@
         th, td { border: 1px solid black; padding: 8px; text-align: center; }
         th { background: #f0f0f0; }
         button { padding: 10px; font-size: 16px; margin-top: 10px; display: block; margin: 10px auto; }
+        
+        @media screen and (max-width: 600px) {
+            table { display: block; }
+            tbody, tr { display: block; width: 100%; }
+            td { display: block; text-align: left; padding: 10px; border-bottom: 1px solid black; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Password Entry -->
     <div id="password-container">
         <h2>Enter Password</h2>
         <input type="password" id="password-input">
@@ -26,7 +31,6 @@
         <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
     </div>
 
-    <!-- Scanner & Table (Hidden until authenticated) -->
     <div id="main-content" style="display: none;">
         <h2>Barcode Scanner</h2>
         <button onclick="startScanner()">Start Scanning</button>
@@ -34,7 +38,6 @@
         <p id="barcode-result">Scan a barcode...</p>
 
         <button id="scan-next-btn" onclick="resumeScanner()" style="display:none;">Next</button>
-        <button id="done-btn" onclick="clearScannedBarcodes()" style="display:none;">Done Scanning</button>
         <button id="copy-btn" onclick="copyTableData()" style="display:none;">Copy Table Data</button>
 
         <table id="barcode-table">
@@ -53,11 +56,10 @@
     </div>
 
     <script>
-        // Password Protection
         function checkPassword() {
             const password = document.getElementById("password-input").value;
             if (password === "678121") {
-                document.body.style.display = "block"; // Show entire page
+                document.body.style.display = "block";
                 document.getElementById("password-container").style.display = "none";
                 document.getElementById("main-content").style.display = "block";
             } else {
@@ -69,14 +71,12 @@
         let scanningEnabled = true; 
 
         const barcodeData = {
-            "1010004533651628": ["TJ 2XT", "K20", "0.300", "105.6"],
-            "7654321": ["AB 4YT", "M10", "0.250", "100.0"]
+            "1010004533651628": ["TJ 2XT", "K20", "0.300", "105.6"]
         };
 
         function startScanner() {
             document.getElementById("scanner-container").style.display = "block";
             document.getElementById("scan-next-btn").style.display = "none";
-            document.getElementById("done-btn").style.display = "none";
             document.getElementById("copy-btn").style.display = "none";
             scanningEnabled = true;
 
@@ -110,19 +110,24 @@
             const barcode = result.codeResult.code;
             document.getElementById("barcode-result").textContent = "Scanned: " + barcode;
 
+            if (!barcodeData[barcode]) {
+                alert("Barcode not recognized");
+                resumeScanner();
+                return;
+            }
+
             if (scannedBarcodes[barcode]) {
                 scannedBarcodes[barcode].quantity += 1; 
             } else {
                 scannedBarcodes[barcode] = {
                     barcode,
-                    details: barcodeData[barcode] || ["N/A", "N/A", "N/A", "N/A"],
+                    details: barcodeData[barcode],
                     quantity: 1
                 };
             }
 
             updateBarcodeTable();
             document.getElementById("scan-next-btn").style.display = "block";
-            document.getElementById("done-btn").style.display = "block";
             document.getElementById("copy-btn").style.display = "block";
         }
 
@@ -145,18 +150,6 @@
             Quagga.start();
         }
 
-        function clearScannedBarcodes() {
-            scannedBarcodes = {};
-            document.getElementById("barcode-table").querySelector("tbody").innerHTML = "";
-            document.getElementById("barcode-result").textContent = "Scan a barcode...";
-            document.getElementById("done-btn").style.display = "none";
-            document.getElementById("scan-next-btn").style.display = "none";
-            document.getElementById("copy-btn").style.display = "none";
-            scanningEnabled = true;
-            Quagga.start();
-        }
-
-        // Copy table data to clipboard
         function copyTableData() {
             let table = document.getElementById("barcode-table");
             let rows = table.querySelectorAll("tr");
@@ -164,7 +157,7 @@
 
             rows.forEach(row => {
                 let cells = row.querySelectorAll("td, th");
-                let rowText = Array.from(cells).map(cell => cell.textContent).join("\t"); // Tab-separated for easy pasting
+                let rowText = Array.from(cells).map(cell => cell.textContent).join("\t");
                 copiedText += rowText + "\n";
             });
 
