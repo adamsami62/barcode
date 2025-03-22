@@ -6,21 +6,131 @@
     <title>Barcode Scanner</title>
     <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; }
-        #password-container { text-align: center; margin-top: 20%; }
-        #scanner-container { width: 100%; max-width: 400px; margin: auto; display: none; }
-        #barcode-result { font-size: 20px; font-weight: bold; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: center; }
-        th { background: #f0f0f0; }
-        button { padding: 10px; font-size: 16px; margin-top: 10px; display: block; margin: 10px auto; }
-        
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #042c64;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        /* Header */
+        h2 {
+            color: #042c64;
+            margin-bottom: 10px;
+        }
+
+        /* Buttons */
+        button {
+            background-color: #042c64;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #021a3a;
+        }
+
+        /* Password Container */
+        #password-container {
+            text-align: center;
+            margin-top: 20%;
+        }
+
+        #password-input {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 5px;
+            border: 1px solid #042c64;
+            border-radius: 5px;
+        }
+
+        /* Scanner */
+        #scanner-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            display: none;
+            border: 2px solid #042c64;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        #barcode-result {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #042c64;
+        }
+
+        /* Table */
+        table {
+            width: 95%;
+            max-width: 800px;
+            border-collapse: collapse;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background-color: #042c64;
+            color: white;
+            padding: 10px;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #e6ecf5;
+        }
+
+        /* Mobile Optimization */
         @media screen and (max-width: 600px) {
-            table { display: block; width: 100%; }
-            thead { display: none; }
-            tbody, tr { display: block; width: 100%; border: 1px solid black; margin-bottom: 10px; padding: 10px; }
-            td { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid black; }
-            td::before { content: attr(data-label); font-weight: bold; }
+            table {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody, tr {
+                display: block;
+                width: 100%;
+                border: 2px solid #042c64;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                padding: 10px;
+                background: white;
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px;
+                border-bottom: 1px solid #ccc;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #042c64;
+            }
         }
     </style>
 </head>
@@ -151,22 +261,6 @@
             document.getElementById("barcode-result").textContent = "Scan a barcode...";
             scanningEnabled = true;
             Quagga.start();
-        }
-
-        function copyTableData() {
-            let table = document.getElementById("barcode-table");
-            let rows = table.querySelectorAll("tr");
-            let copiedText = "";
-
-            rows.forEach(row => {
-                let cells = row.querySelectorAll("td, th");
-                let rowText = Array.from(cells).map(cell => cell.textContent).join("\t");
-                copiedText += rowText + "\n";
-            });
-
-            navigator.clipboard.writeText(copiedText)
-                .then(() => alert("Table data copied to clipboard!"))
-                .catch(err => console.error("Error copying text: ", err));
         }
     </script>
 </body>
