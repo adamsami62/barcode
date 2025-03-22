@@ -16,9 +16,11 @@
         button { padding: 10px; font-size: 16px; margin-top: 10px; display: block; margin: 10px auto; }
         
         @media screen and (max-width: 600px) {
-            table { display: block; }
-            tbody, tr { display: block; width: 100%; }
-            td { display: block; text-align: left; padding: 10px; border-bottom: 1px solid black; }
+            table { display: block; width: 100%; }
+            thead { display: none; }
+            tbody, tr { display: block; width: 100%; border: 1px solid black; margin-bottom: 10px; padding: 10px; }
+            td { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid black; }
+            td::before { content: attr(data-label); font-weight: bold; }
         }
     </style>
 </head>
@@ -37,7 +39,6 @@
         <div id="scanner-container"></div>
         <p id="barcode-result">Scan a barcode...</p>
 
-        <button id="scan-next-btn" onclick="resumeScanner()" style="display:none;">Next</button>
         <button id="copy-btn" onclick="copyTableData()" style="display:none;">Copy Table Data</button>
 
         <table id="barcode-table">
@@ -76,7 +77,6 @@
 
         function startScanner() {
             document.getElementById("scanner-container").style.display = "block";
-            document.getElementById("scan-next-btn").style.display = "none";
             document.getElementById("copy-btn").style.display = "none";
             scanningEnabled = true;
 
@@ -127,7 +127,6 @@
             }
 
             updateBarcodeTable();
-            document.getElementById("scan-next-btn").style.display = "block";
             document.getElementById("copy-btn").style.display = "block";
         }
 
@@ -137,15 +136,19 @@
 
             Object.values(scannedBarcodes).forEach(({ barcode, details, quantity }) => {
                 const row = document.createElement("tr");
-                row.innerHTML = `<td>${barcode}</td><td>${details[0]}</td><td>${details[1]}</td>
-                                 <td>${details[2]}</td><td>${details[3]}</td><td>${quantity}</td>`;
+                row.innerHTML = `
+                    <td data-label="Barcode#">${barcode}</td>
+                    <td data-label="SKU">${details[0]}</td>
+                    <td data-label="Quality">${details[1]}</td>
+                    <td data-label="Thickness (mm)">${details[2]}</td>
+                    <td data-label="Reel Width (mm)">${details[3]}</td>
+                    <td data-label="Quantity">${quantity}</td>`;
                 tbody.appendChild(row);
             });
         }
 
         function resumeScanner() {
             document.getElementById("barcode-result").textContent = "Scan a barcode...";
-            document.getElementById("scan-next-btn").style.display = "none";
             scanningEnabled = true;
             Quagga.start();
         }
