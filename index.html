@@ -103,6 +103,13 @@
     button:hover {
       background: #031c46;
     }
+    /* Dropdown styling */
+    select {
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+    }
     /* On narrow screens, force table to be wide so internal scrolling works */
     @media screen and (max-width: 600px) {
       table {
@@ -124,6 +131,12 @@
 
   <div id="main-content" style="display: none;">
     <h2>Barcode Scanner</h2>
+    <!-- Warehouse selection dropdown -->
+    <select id="warehouse-selector" onchange="changeWarehouse()">
+      <option value="A" selected>Warehouse A</option>
+      <option value="B">Warehouse B</option>
+      <option value="C">Warehouse C</option>
+    </select>
     <button onclick="startScanner()">Start Scanning</button>
     <button id="toggle-flashlight" onclick="toggleFlashlight()" style="display: none;">Toggle Flashlight</button>
     <div id="scanner-box">
@@ -160,14 +173,26 @@
       }
     }
 
-    let scannedBarcodes = {}; 
+    // Create separate storage for each warehouse (A, B, C)
+    let scannedBarcodes = {
+      "A": {},
+      "B": {},
+      "C": {}
+    };
+    let currentWarehouse = "A";
     let scanningEnabled = true; 
     let stream;
     let isFlashlightOn = false;
     const barcodeData = {
-  "1010004533651628": ["TJ 2XT", "K20", "0.300", "105.6"],
-  "9876543210987654": ["XZ 9YQ", "M15", "0.250", "98.4"]
-};
+      "1010004533651628": ["TJ 2XT", "K20", "0.300", "105.6"],
+      "9876543210987654": ["XZ 9YQ", "M15", "0.250", "98.4"]
+    };
+
+    function changeWarehouse() {
+      // Save current warehouse selection and update table display accordingly
+      currentWarehouse = document.getElementById("warehouse-selector").value;
+      updateBarcodeTable();
+    }
 
     function startScanner() {
       document.getElementById("scanner-box").style.display = "flex";
@@ -206,10 +231,11 @@
         resumeScanner();
         return;
       }
-      if (scannedBarcodes[barcode]) {
-        scannedBarcodes[barcode].quantity += 1; 
+      // Work with the current warehouse's data
+      if (scannedBarcodes[currentWarehouse][barcode]) {
+        scannedBarcodes[currentWarehouse][barcode].quantity += 1; 
       } else {
-        scannedBarcodes[barcode] = {
+        scannedBarcodes[currentWarehouse][barcode] = {
           barcode,
           details: barcodeData[barcode],
           quantity: 1
@@ -221,7 +247,7 @@
     function updateBarcodeTable() {
       const tbody = document.getElementById("barcode-table").querySelector("tbody");
       tbody.innerHTML = "";
-      Object.values(scannedBarcodes).forEach(({ barcode, details, quantity }) => {
+      Object.values(scannedBarcodes[currentWarehouse]).forEach(({ barcode, details, quantity }) => {
         const row = document.createElement("tr");
         row.innerHTML = `<td>${barcode}</td><td>${details[0]}</td><td>${details[1]}</td>
                          <td>${details[2]}</td><td>${details[3]}</td><td>${quantity}</td>`;
